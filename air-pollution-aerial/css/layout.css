@@ -1,0 +1,164 @@
+body {
+  font-family: 'Lato', georgia, times, "times new roman", serif;
+}
+
+h2 {
+  margin-left: 13px;
+  color: #555;
+}
+
+#playback-controls {
+  position: absolute;
+  top: 455px;
+  left: 10px;
+}
+
+#playback-controls i {
+  color: #939598;
+  font-size: 1.35em;
+  vertical-align: middle;
+}
+
+#buttons {
+  display: inline-block;
+  margin-left: 15px;
+}
+
+#reset-button {
+  border-bottom-left-radius: 0.7em;
+}
+
+#play-pause-button {
+  min-width: 3.2em;
+  border-bottom-right-radius: 0.7em;
+}
+
+#joystick-control {
+    position: absolute;
+    left: 500px;
+    top: 235px;
+}
+
+#base {
+    background-color: lightgray;
+    width: 100px;
+    height: 100px;
+    padding:0px;
+    -moz-box-shadow:    inset 2px 2px 3px #888888;
+    -webkit-box-shadow: inset 2px 2px 3px #888888;
+    box-shadow:         inset 2px 2px 3px #888888;
+    border-radius: 100px;
+}
+
+#joystick {
+    background-color:red;
+    position:relative;
+    margin:0px;
+    padding:0px;
+    width: 40px;
+    height: 40px;
+    left:30px;
+    top:30px;
+    -moz-box-shadow:    3px 3px 3px #888888;
+    -webkit-box-shadow: 3px 3px 3px #888888;
+    box-shadow:         3px 3px 3px #888888;
+    border-radius: 100px;
+    cursor: pointer;
+}
+
+#joystick-n {
+  position: relative;
+  top: -119px;
+  left: 45px;
+}
+
+#joystick-e {
+  position: relative;
+  top: -58px;
+  left: 90px;
+}
+
+#joystick-s {
+  position: relative;
+  left: 15px;
+}
+
+#joystick-w {
+  position: relative;
+  top: -58px;
+  left: -62px;
+}
+
+#windspeed {
+  position: relative;
+  top: 23px;
+  left: -82px;
+}
+
+#instructions {
+  position: absolute;
+  top: 469px;
+  left: 145px;
+}
+
+#air-quality {
+  position: absolute;
+  top: -16px;
+  left: 480px;
+}
+
+#air-quality-scale {
+  position: relative;
+  left: 200px;
+  width: 90px;
+  padding: 10px;
+  border: #BBB 2px solid
+}
+
+#scale {
+  height: 150px;
+  width: 23px;
+  background: #ff3232;
+  background: -moz-linear-gradient(top,  #ff3232 0%, #edf72e 50%, #2aff00 100%);
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#ff3232), color-stop(50%,#edf72e), color-stop(100%,#2aff00));
+  background: -webkit-linear-gradient(top,  #ff3232 0%,#edf72e 50%,#2aff00 100%);
+  background: -o-linear-gradient(top,  #ff3232 0%,#edf72e 50%,#2aff00 100%);
+  background: -ms-linear-gradient(top,  #ff3232 0%,#edf72e 50%,#2aff00 100%);
+  background: linear-gradient(to bottom,  #ff3232 0%,#edf72e 50%,#2aff00 100%);
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ff3232', endColorstr='#2aff00',GradientType=0 );
+}
+
+#air-quality-scale span {
+  position: absolute;
+  left: 45px;
+}
+
+#poor {
+  top: 10px;
+}
+#fair {
+  top: 73px;
+}
+#good {
+  top: 142px;
+}
+
+#cities {
+  position: absolute;
+  top: 70px;
+}
+
+.city {
+  width: 150px;
+  clear:both;
+  margin-bottom: 45px;
+}
+
+.quality-measure {
+  float: left;
+  width: 40px;
+  height: 23px;
+  border: 1px solid black;
+  margin-right: 20px;
+  margin-top: -3px;
+}

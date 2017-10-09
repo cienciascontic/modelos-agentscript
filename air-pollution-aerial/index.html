@@ -1,0 +1,258 @@
+<meta http-equiv="content-type" content="text/html; charset=UTF8">
+<html>
+  <head>
+    <title>Modelo de AgentScript</title>
+    <script src="../lib/agentscript/agentscript.js"></script>
+    <script src="../lib/agentscript/coffee-script.js"></script>
+    <link href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" rel="stylesheet" type="text/css" />
+    <link href="//netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css" rel="stylesheet">
+    <link href="css/layout.css" rel="stylesheet" type="text/css" />
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.0/jquery-ui.min.js"></script>
+    <!-- <script src="http://lab.concord.org/vendor/d3/d3.js"></script> -->
+    <!-- <script src="../lib/lab.grapher.js"></script> -->
+    <script type="text/coffeescript" src="js/air-pollution-aerial-model.coffee"></script>
+    <script type="text/javascript">
+      var modelLoaded = $.Deferred();
+
+      $(function() {
+        $("button").button();
+        $("#playback").buttonset();
+        $(".icon-pause").hide();
+      });
+
+      $.when(modelLoaded).done(function() {
+        model = new AirPollutionAerial("layers", 3, 0, 150, 0, 150, false);
+        //model.start();
+      });
+    </script>
+    <script src="http://shutterbug.herokuapp.com/shutterbug/shutterbug.js"></script>
+    <script type="text/javascript">new Shutterbug('#content', '', null, null);</script>
+  </head>
+  <body>
+    <div id="sprites">
+      <img id="factory-sprite" src="img/factory.png" />
+    </div>
+    <div id="content">
+      <div id="model">
+        <canvas id="canvas" >Tu navegador no soporta HTML5 Canvas.</canvas>
+        <div id="layers"></div>
+      </div>
+      <div id="playback-controls">
+        <div id="playback">
+          <button id="reset-button">
+            <i class="icon-step-backward"></i>
+          </button>
+          <button id="play-pause-button">
+            <i class="icon-play"></i>
+            <i class="icon-pause"></i>
+          </button>
+        </div>
+      </div>
+      <div id="air-quality">
+        <h2>Calidad del aire</h2>
+        <div id="air-quality-scale">
+          <div id="scale"></div>
+          <span id="poor">Mala</span>
+          <span id="fair">Regular</span>
+          <span id="good">Buena</span>
+        </div>
+        <div id="cities">
+          <div id="city-a" class="city">
+            <div class="quality-measure"></div>
+            <span>Ciudad A</span>
+          </div>
+          <div id="city-b" class="city">
+            <div class="quality-measure"></div>
+            <span>Ciudad B</span>
+          </div>
+          <div id="city-c" class="city">
+            <div class="quality-measure"></div>
+            <span>Ciudad C</span>
+          </div>
+        </div>
+      </div>
+      <div id="joystick-control">
+        <h2>Viento</h2>
+        <div id="base">
+            <div id="joystick"></div>
+        </div>
+        <span id="joystick-n">N</span>
+        <span id="joystick-e">E</span>
+        <span id="joystick-s">S</span>
+        <span id="joystick-w">O</span>
+        <span id="windspeed">Velocidad viento: <span id="joystick-speed">0</span> km/h <span id="joystick-direction"></span></span>
+      </div>
+      <div id="instructions">
+        <span>Clic en el modelo para agregar hasta cuatro plantas.</span>
+      </div>
+    </div>
+    <script>
+      // requestAnimationFrame polyfill by Erik Möller
+      // fixes from Paul Irish and Tino Zijdel
+
+      (function() {
+          var lastTime = 0;
+          var vendors = ['ms', 'moz', 'webkit', 'o'];
+          for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
+              window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
+              window.cancelAnimationFrame = window[vendors[x]+'CancelAnimationFrame']
+                                         || window[vendors[x]+'CancelRequestAnimationFrame'];
+          }
+
+          if (!window.requestAnimationFrame)
+              window.requestAnimationFrame = function(callback, element) {
+                  var currTime = new Date().getTime();
+                  var timeToCall = Math.max(0, 16 - (currTime - lastTime));
+                  var id = window.setTimeout(function() { callback(currTime + timeToCall); },
+                    timeToCall);
+                  lastTime = currTime + timeToCall;
+                  return id;
+              };
+
+          if (!window.cancelAnimationFrame)
+              window.cancelAnimationFrame = function(id) {
+                  clearTimeout(id);
+              };
+      }());
+    </script>
+    <script>
+      $('#play-pause-button').click(function() {
+        if (model.anim.animStop) {
+          model.start();
+          $(".icon-pause").show();
+          $(".icon-play").hide();
+        } else {
+          model.stop();
+          $(".icon-pause").hide();
+          $(".icon-play").show();
+        }
+      });
+
+      $('#reset-button').click(function() {
+        model.stop();
+        $(".icon-pause").hide();
+        $(".icon-play").show();
+        $("#joystick").css({left: 30, top: 30});
+        $("#joystick-speed").text("0");
+        $("#joystick-direction").text("");
+        model.setup();
+      });
+
+      function offsetX(evt, target) {
+        return evt.offsetX !== null ? evt.offsetX : (evt.pageX - target.offset().left)
+      }
+
+      function offsetY(evt, target) {
+        return evt.offsetY !== null ? evt.offsetY : (evt.pageY - target.offset().top)
+      }
+
+      var target = $("#layers");
+      target.bind('mousedown', function (evt) {
+        var p = model.patches.patchAtPixel(offsetX(evt, target), offsetY(evt, target));
+        model.addFactoryTo(p)
+      });
+
+      var baseEl = document.getElementById("base");
+      var joystickEl = document.getElementById("joystick");
+      var base = {
+          width: baseEl.offsetWidth,
+          height: baseEl.offsetHeight,
+          top: baseEl.offsetTop,
+          left: baseEl.offsetLeft
+      };
+      var joystick = {
+          halfWidth: joystickEl.offsetWidth/2,
+          halfHeight: joystickEl.offsetHeight/2
+      };
+      base.center = [base.width / 2, base.height / 2];
+      base.radius = base.width / 2;
+
+
+      $("#joystick").draggable({
+          revert: false,    // set to true to have joystick slide back to center
+          create: function () {
+              joystick.startLeft = parseInt($(this).css("left"));
+              joystick.startRight = parseInt($(this).css("top"));
+              $(this).data("startLeft", joystick.startLeft);
+              $(this).data("startTop", joystick.startRight);
+          },
+          drag: function (event, ui) {
+              loc = limitXY(ui.position.left+joystick.halfWidth, ui.position.top+joystick.halfHeight);
+              if (loc) {
+                  ui.position.left = loc.x-joystick.halfWidth;
+                  ui.position.top = loc.y-joystick.halfHeight;
+              }
+              var rel_left = ui.position.left - joystick.startLeft;
+              var rel_top = ui.position.top - joystick.startRight;
+              joystickMoved(rel_left, rel_top);
+
+              var speed = Math.round(Math.sqrt(rel_left*rel_left + rel_top*rel_top));
+              $('#joystick-speed').text(speed);
+              if (speed > 0) {
+                var angle = Math.acos(rel_top/speed);
+                $('#joystick-direction').text(getCardinalDirection(angle, rel_left));
+              }
+          },
+          stop: function () {
+              //$('#coords').html("&nbsp;");
+          }
+      });
+
+      function getCardinalDirection(angle, distLeft) {
+        var direction = ["", ""];
+        if (angle < 3*Math.PI/8)
+          direction[0] = "norte";
+        else if (angle > 5*Math.PI/8)
+          direction[0] = "sur";
+        if (angle > Math.PI/8 && angle < 7*Math.PI/8) {
+          direction[1] = (distLeft > 0) ? "oeste" : "este"
+        }
+        direction = direction.join("");
+        return direction.charAt(0).toUpperCase() + direction.slice(1);
+      }
+
+      function limitXY(x, y) {
+          var dist = distance([x, y], base.center);
+          if (dist <= base.radius - joystick.halfWidth) {
+              return null;
+          } else {
+              x = x - base.center[0];
+              y = y - base.center[1];
+              var radians = Math.atan2(y, x);
+              return {
+                  x: Math.cos(radians) * (base.radius-joystick.halfWidth) + base.center[0],
+                  y: Math.sin(radians) * (base.radius-joystick.halfWidth) + base.center[1]
+              };
+          }
+      }
+
+      function distance(dot1, dot2) {
+          var x1 = dot1[0],
+              y1 = dot1[1],
+              x2 = dot2[0],
+              y2 = dot2[1];
+          return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+      }
+
+      function joystickMoved(x, y) {
+        model.setWindSpeed(x/30, -y/30);
+      }
+
+      // city: 'city-a'; quality: 0-100
+      function setAirQualityScale(city, quality) {
+        var color = "hsl("+quality+",100%,50%)";
+        $("#"+city+" .quality-measure").css("background-color", color);
+      }
+
+      function updateAirQuality() {
+        requestAnimationFrame(updateAirQuality);
+        setAirQualityScale('city-a', model.aQuality);
+        setAirQualityScale('city-b', model.bQuality);
+        setAirQualityScale('city-c', model.cQuality);
+      }
+
+      updateAirQuality();
+    </script>
+  </body>
+</html>
